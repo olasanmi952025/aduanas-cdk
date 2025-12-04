@@ -1,0 +1,62 @@
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# TypeScript compiled output
+*.js
+*.d.ts
+*.js.map
+!lambda/**/*.js
+!jest.config.js
+# Incluir archivos fuente TypeScript para Lambda Docker builds
+!lib/webportal/lambdas/**/*.ts
+!lib/webportal/lambdas/**/*.js
+!lib/webportal/lambdas/**/tsconfig.json
+!lib/webportal/lambdas/**/tsconfig.build.json
+!lib/webportal/lambdas/**/src/
+!lib/webportal/lambdas/**/src/**
+
+# IDEs
+.idea
+*.iml
+.vscode
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# AWS
+.aws-sam/
+
+# Test coverage
+coverage
+.nyc_output
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+
+# Build artifacts
+dist/
+build/
+
+**/oracle

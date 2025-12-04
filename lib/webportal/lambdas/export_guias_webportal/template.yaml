@@ -1,0 +1,241 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'Aduanas Service - NestJS Microservice with TypeORM and JWT'
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs20.x
+    Environment:
+      Variables:
+        NODE_ENV: production
+        DB_HOST: !Ref DatabaseHost
+        DB_PORT: !Ref DatabasePort
+        DB_USERNAME: !Ref DatabaseUsername
+        DB_PASSWORD: !Ref DatabasePassword
+        DB_NAME: !Ref DatabaseName
+        JWT_PUBLIC_KEY: !Ref JwtPublicKey
+        CORS_ORIGIN: !Ref CorsOrigin
+        COGNITO_JWKS_URI: !Ref CognitoJwksUri
+        COGNITO_ISSUER: !Ref CognitoIssuer
+        COGNITO_CLIENT_ID: !Ref CognitoClientId
+
+Parameters:
+  DatabaseHost:
+    Type: String
+    Default: localhost
+    Description: PostgreSQL database host
+  DatabasePort:
+    Type: Number
+    Default: 5432
+    Description: PostgreSQL database port
+  DatabaseUsername:
+    Type: String
+    Default: postgres
+    Description: PostgreSQL database username
+  DatabasePassword:
+    Type: String
+    NoEcho: true
+    Description: PostgreSQL database password
+  DatabaseName:
+    Type: String
+    Default: nestjs_api
+    Description: PostgreSQL database name
+  JwtPublicKey:
+    Type: String
+    NoEcho: true
+    Description: JWT public key for token validation
+  CorsOrigin:
+    Type: String
+    Default: '*'
+    Description: CORS allowed origins
+  AuthorizerArn:
+    Type: String
+    Default: ''
+    Description: ARN of existing API Gateway Authorizer (optional)
+  AuthorizerType:
+    Type: String
+    Default: 'NONE'
+    AllowedValues: ['NONE', 'COGNITO_USER_POOLS', 'TOKEN', 'REQUEST']
+    Description: Type of API Gateway Authorizer
+  CognitoJwksUri:
+    Type: String
+    Default: ''
+    Description: Cognito JWKS URI for JWT validation
+  CognitoIssuer:
+    Type: String
+    Default: ''
+    Description: Cognito Issuer URL
+  CognitoClientId:
+    Type: String
+    Default: ''
+    Description: Cognito Client ID
+  CognitoUserPoolId:
+    Type: String
+    Default: 'us-east-1_nJrsAxdlE'
+    Description: Cognito User Pool ID
+  Environment:
+    Type: String
+    Default: 'sandbox6'
+    Description: Environment name
+  EnableSQS:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+    Description: "Enable SQS interface for async processing"
+  DeploymentTarget:
+    Type: String
+    Default: "lambda"
+    AllowedValues: ["lambda", "docker", "kubernetes"]
+    Description: "Deployment target platform"
+
+Conditions:
+  HasAuthorizerArn: !Not [!Equals [!Ref AuthorizerArn, '']]
+  EnableSQSCondition: !Equals [!Ref EnableSQS, "true"]
+  IsLambdaDeployment: !Equals [!Ref DeploymentTarget, "lambda"]
+  IsDockerDeployment: !Equals [!Ref DeploymentTarget, "docker"]
+  IsK8sDeployment: !Equals [!Ref DeploymentTarget, "kubernetes"]
+
+Resources:
+  # Dependencies Layer
+  DependenciesLayer:
+    Type: AWS::Serverless::LayerVersion
+    Condition: IsLambdaDeployment
+    Properties:
+      LayerName: !Sub "${AWS::StackName}-dependencies"
+      Description: "Shared dependencies for NestJS application"
+      ContentUri: layers/dependencies/
+      CompatibleRuntimes:
+        - nodejs20.x
+      RetentionPolicy: Retain
+
+  # SQS Queue (condicional)
+  ProcessingQueue:
+    Type: AWS::SQS::Queue
+    Condition: EnableSQSCondition
+    Properties:
+      QueueName: !Sub "${AWS::StackName}-processing-queue"
+      VisibilityTimeoutSeconds: 300
+      MessageRetentionPeriod: 1209600
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
+        maxReceiveCount: 3
+
+  # Dead Letter Queue
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Condition: EnableSQSCondition
+    Properties:
+      QueueName: !Sub "${AWS::StackName}-dlq"
+      MessageRetentionPeriod: 1209600
+
+  AduanasServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: lambda.handler
+      Description: Aduanas Service Lambda Function
+      Layers:
+        - !If [IsLambdaDeployment, !Ref DependenciesLayer, !Ref "AWS::NoValue"]
+      Events:
+        ApiGateway:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            RestApiId: !Ref AduanasServiceApi
+        HealthCheck:
+          Type: Api
+          Properties:
+            Path: /api/health
+            Method: GET
+            RestApiId: !Ref AduanasServiceApi
+        SQSEvent:
+          Type: SQS
+          Condition: EnableSQSCondition
+          Properties:
+            Queue: !GetAtt ProcessingQueue.Arn
+            BatchSize: 10
+
+  AduanasServiceApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,PATCH,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization,X-Requested-With'"
+        AllowOrigin: !Sub "'${CorsOrigin}'"
+        MaxAge: "'600'"
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}"
+            Identity:
+              Header: Authorization
+              ValidationExpression: "^Bearer [A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.?[A-Za-z0-9-_.+/=]*$"
+            CacheTtlInSeconds: 300
+        DefaultAuthorizer: CognitoAuthorizer
+      GatewayResponses:
+        DEFAULT_4XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: !Sub "'${CorsOrigin}'"
+        DEFAULT_5XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: !Sub "'${CorsOrigin}'"
+        UNAUTHORIZED:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: !Sub "'${CorsOrigin}'"
+        ACCESS_DENIED:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: !Sub "'${CorsOrigin}'"
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Policy:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: execute-api:Invoke
+            Resource: '*'
+
+
+Outputs:
+  AduanasServiceApi:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${AduanasServiceApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiUrl"
+
+  AduanasServiceFunction:
+    Description: "Lambda Function ARN"
+    Value: !GetAtt AduanasServiceFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-FunctionArn"
+
+  ProcessingQueue:
+    Condition: EnableSQSCondition
+    Description: "SQS Processing Queue URL"
+    Value: !Ref ProcessingQueue
+    Export:
+      Name: !Sub "${AWS::StackName}-ProcessingQueueUrl"
+
+  DeadLetterQueue:
+    Condition: EnableSQSCondition
+    Description: "SQS Dead Letter Queue URL"
+    Value: !Ref DeadLetterQueue
+    Export:
+      Name: !Sub "${AWS::StackName}-DeadLetterQueueUrl"
+
+  DependenciesLayer:
+    Condition: IsLambdaDeployment
+    Description: "Dependencies Layer ARN"
+    Value: !Ref DependenciesLayer
+    Export:
+      Name: !Sub "${AWS::StackName}-DependenciesLayerArn"
+

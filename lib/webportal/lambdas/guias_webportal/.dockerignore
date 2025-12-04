@@ -1,0 +1,58 @@
+# Docker ignore para Lambda Docker build
+# IMPORTANTE: No excluir archivos necesarios para la compilación
+
+# Excluir node_modules (se instalarán dentro del contenedor)
+node_modules/
+
+# Excluir dist (se compilará dentro del contenedor)
+dist/
+
+# Excluir archivos de desarrollo
+*.log
+.env
+.env.*
+docker-compose*.yml
+docker.env
+env.example
+
+# Excluir scripts de desarrollo
+scripts/
+docs/
+
+# Excluir otros Dockerfiles
+Dockerfile
+
+# Excluir archivos de build (pero NO los archivos fuente)
+*.tsbuildinfo
+.cache/
+
+# Excluir archivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Excluir archivos de OS
+.DS_Store
+Thumbs.db
+
+# Excluir SAM
+.aws-sam/
+template.yaml
+samconfig.toml
+
+# Excluir layers (no necesarios para Lambda Docker)
+layers/
+
+# Excluir archivos de CI/CD
+bitbucket-pipelines.yml
+
+# NO excluir:
+# - package*.json (necesario)
+# - .npmrc (necesario)
+# - tsconfig.json (necesario)
+# - tsconfig.build.json (necesario)
+# - src/ (necesario)
+# - *.ts (archivos fuente TypeScript)
+# - *.js (archivos compilados que puedan existir)
+

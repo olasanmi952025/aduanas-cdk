@@ -1,0 +1,36 @@
+# Excluir node_modules y archivos de desarrollo
+node_modules
+npm-debug.log
+.git
+.gitignore
+
+# Mantener archivos necesarios para el build
+# NO excluir src/, tsconfig.json, tsconfig.build.json
+
+# Excluir archivos temporales
+*.log
+.DS_Store
+.env.local
+.env.*.local
+
+# Excluir archivos de testing
+coverage
+.nyc_output
+*.test.ts
+*.spec.ts
+
+# Excluir documentación innecesaria
+docs
+README.md
+*.md
+!package.json
+
+# Excluir archivos de CI/CD
+bitbucket-pipelines.yml
+.github
+.gitlab-ci.yml
+
+# Excluir Docker files locales
+docker-compose*.yml
+.dockerignore
+

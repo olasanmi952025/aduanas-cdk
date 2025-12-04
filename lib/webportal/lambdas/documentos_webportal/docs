@@ -1,0 +1,37 @@
+
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Aduanas Service API</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 40px; }
+              .endpoint { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+              .method { font-weight: bold; color: #007bff; }
+            </style>
+          </head>
+          <body>
+            <h1>Aduanas Service API</h1>
+            <p>Versión: 1.0.0</p>
+            <h2>Endpoints disponibles:</h2>
+            <div class="endpoint">
+              <span class="method">GET</span> /api/health - Health check
+            </div>
+            <div class="endpoint">
+              <span class="method">GET</span> /samples - Obtener muestras
+            </div>
+            <div class="endpoint">
+              <span class="method">POST</span> /samples - Crear muestra
+            </div>
+            <div class="endpoint">
+              <span class="method">GET</span> /samples/:id - Obtener muestra por ID
+            </div>
+            <div class="endpoint">
+              <span class="method">PUT</span> /samples/:id - Actualizar muestra
+            </div>
+            <div class="endpoint">
+              <span class="method">DELETE</span> /samples/:id - Eliminar muestra
+            </div>
+            <p><a href="/api/docs-json">Ver documentación JSON completa</a></p>
+          </body>
+          </html>
+        

@@ -1,0 +1,35 @@
+image: node:18
+
+clone:
+  depth: full              # SonarQube Cloud scanner needs the full history to assign issues properly
+
+definitions:
+  caches:
+    sonar: ~/.sonar/cache  # Caching SonarQube Cloud artifacts will speed up your build
+  steps:
+    - step: &build-test-sonarcloud
+        name: Build, test and analyze on SonarQube Cloud
+        caches:
+          - node           # Cache node_modules for faster builds
+          - sonar
+        script:
+          - npm ci         # Install dependencies (faster than npm install)
+          - npm test -- --coverage  # Run tests with coverage report
+          - pipe: sonarsource/sonarcloud-scan:4.0.0
+    - step: &check-quality-gate-sonarcloud
+        name: Check the Quality Gate on SonarQube Cloud
+        script:
+          - pipe: sonarsource/sonarcloud-quality-gate:0.1.6
+
+pipelines:                 # More info here: https://confluence.atlassian.com/bitbucket/configure-bitbucket-pipelines-yml-792298910.html
+  custom:                  # Custom pipelines allow full manual execution
+    sonar-develop:
+      - step: *build-test-sonarcloud
+      - step: *check-quality-gate-sonarcloud
+    sonar-main:
+      - step: *build-test-sonarcloud
+      - step: *check-quality-gate-sonarcloud
+  pull-requests:
+    '**':
+      - step: *build-test-sonarcloud
+      - step: *check-quality-gate-sonarcloud

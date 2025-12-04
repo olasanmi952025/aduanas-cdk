@@ -1,0 +1,51 @@
+{
+    "name": "mut-sdk-project",
+    "version": "1.0.0",
+    "description": "AWS CDK project for Lambda and API Gateway with mut prefix",
+    "main": "index.js",
+    "scripts": {
+        "build": "tsc",
+        "watch": "tsc -w",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "cdk": "cdk",
+        "synth": "dotenvx run -- cdk synth",
+        "synth:dev": "dotenvx run -- cdk synth -c stage=dev",
+        "synth:prod": "dotenvx run -- cdk synth -c stage=prod",
+        "deploy": "dotenvx run -- cdk deploy",
+        "deploy:all": "bash deploy-all.sh",
+        "deploy:dev": "dotenvx run -- cdk deploy -c stage=dev",
+        "deploy:prod": "dotenvx run -- cdk deploy -c stage=prod",
+        "destroy": "dotenvx run -- cdk destroy",
+        "destroy:dev": "dotenvx run -- cdk destroy -c stage=dev",
+        "destroy:prod": "dotenvx run -- cdk destroy -c stage=prod",
+        "diff": "dotenvx run -- cdk diff",
+        "diff:dev": "dotenvx run -- cdk diff -c stage=dev",
+        "diff:prod": "dotenvx run -- cdk diff -c stage=prod",
+        "list": "dotenvx run -- cdk list"
+    },
+    "keywords": [
+        "aws",
+        "cdk",
+        "lambda",
+        "apigateway",
+        "mut"
+    ],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "dependencies": {
+        "@aws-sdk/client-ec2": "^3.925.0",
+        "@aws-sdk/credential-providers": "^3.925.0",
+        "aws-cdk-lib": "^2.221.0",
+        "constructs": "^10.4.2",
+        "dotenv": "^17.2.3",
+        "oracledb": "^6.10.0",
+        "source-map-support": "^0.5.21"
+    },
+    "devDependencies": {
+        "@types/node": "^24.9.1",
+        "aws-cdk": "^2.1031.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.9.3"
+    }
+}

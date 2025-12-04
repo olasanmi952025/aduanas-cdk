@@ -1,0 +1,4 @@
+[dotenv@17.2.3] injecting env (22) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+Route table for subnet subnet-037eb54265d07da73: webportal-aduanas-webportal-stack-dev/RouteTableForSubnet0
+Route table for subnet subnet-009ab6b021d6e8977: webportal-aduanas-webportal-stack-dev/RouteTableForSubnet1
+Usando bucket existente: webportal-aduanas-webportal-export-guides-bucket-dev
