@@ -241,7 +241,7 @@ export class DocumentsService {
       }
 
       /**es para filtrar por el tipo de participante (ROL) en la tabla participacion */
-      if (filters?.tipoParticipante) {
+      if (filters?.tipoParticipante && !tieneBusquedaEspecifica) {
         if(filters.tipoParticipante.toUpperCase() === 'EMISOR'){
           filters.tipoParticipante = 'EMI';
         }
@@ -251,17 +251,17 @@ export class DocumentsService {
       }
 
       /**es para filtrar por el nombre del emisor en la tabla DOCPARTICIPACION */
-      if (filters?.emisor) {
+      if (filters?.emisor && !tieneBusquedaEspecifica) {
         where.push("UPPER(P.NOMBREPARTICIPANTE) LIKE UPPER(:emisor)");
         params.emisor = `%${String(filters.emisor).trim()}%`;
       }
 
-      if (filters?.tipoLocacion) {
+      if (filters?.tipoLocacion && !tieneBusquedaEspecifica) {
         where.push("dld.TIPOLOCACION = :tipoLocacion");
         params.tipoLocacion = String(filters.tipoLocacion);
       }
 
-      if (filters?.locacion) {
+      if (filters?.locacion && !tieneBusquedaEspecifica) {
         console.log("locacion-----------------------", filters.locacion);
         const locacionValue = String(filters.locacion).trim();
         // Si es numérico, comparar con IDLOCACION
@@ -291,17 +291,17 @@ export class DocumentsService {
         );
       }
 
-      if (filters?.estado) {
+      if (filters?.estado && !tieneBusquedaEspecifica) {
         where.push("eo.TIPOESTADO = :estado");
         params.estado = String(filters.estado);
       }
 
-      if (filters?.sentidoOperacion) {
+      if (filters?.sentidoOperacion && !tieneBusquedaEspecifica) {
         where.push("dtm.TIPOMANIFIESTO = :sentidoOperacion");
         params.sentidoOperacion = String(filters.sentidoOperacion);
       }
 
-      if (filters?.numeroVuelo) {
+      if (filters?.numeroVuelo && !tieneBusquedaEspecifica) {
         where.push("dtm.VIAJE = :numeroVuelo");
         params.numeroVuelo = String(filters.numeroVuelo);
       }

@@ -634,7 +634,7 @@ export class WebportalStack extends cdk.Stack {
           DYNAMODB_TABLE_NAME: exportTable.tableName,
           DYNAMODB_ENDPOINT_URL: dynamoDbEndpointUrl,
           ENABLE_MOCK_DOCUMENT: "true",
-          SOAP_GENERAR_DOCUMENTO_URL: "https://testesb.aduana.cl/VisualDocsCliente/http/GenerarDocumentoService",
+          SOAP_GENERAR_DOCUMENTO_URL: "https://10.19.100.242/VisualDocsCliente/http/GenerarDocumentoService",
         },
         description: `Lambda export-guias-webportal (NestJS Docker) for ${project}-${client}-${useCase} in ${stage} - SQS Consumer`,
         // logRetention: logs.RetentionDays.ONE_WEEK, // Temporalmente deshabilitado por problemas con el Custom Resource
@@ -680,40 +680,6 @@ export class WebportalStack extends cdk.Stack {
         ],
       },
     });
-
-
-    //##### PRUEBA SOAP ####/
-    const exportGuiaTestLambda = new lambda.DockerImageFunction(
-      this,
-      "ExportGuiaTestLambda",
-      {
-        functionName: generateResourceName("lambda_consume_soap_test"),
-        code: lambda.DockerImageCode.fromImageAsset(
-          path.join(__dirname, "lambdas/consume_soap"),
-          {
-            platform: Platform.LINUX_AMD64,
-          }
-        ),
-        timeout: cdk.Duration.seconds(60),
-        memorySize: 512,
-        role: lambdaRole,
-        vpc: vpc,
-        vpcSubnets: vpcSubnets,
-        securityGroups: [lambdaSecurityGroup],
-        environment: {
-          STAGE: stage,
-          PROJECT: project,
-          CLIENT: client,
-          USE_CASE: useCase,
-          NODE_ENV: "production",
-          // SOAP Configuration
-          SOAP_GENERAR_DOCUMENTO_URL: "https://testesb.aduana.cl/VisualDocsCliente/http/GenerarDocumentoService",
-        },
-        description: `Lambda consume-soap test for ${project}-${client}-${useCase} in ${stage}`,
-        // logRetention: logs.RetentionDays.ONE_WEEK, // Temporalmente deshabilitado por problemas con el Custom Resource
-      }
-    );
-    this.lambdas["consume-soap-test"] = exportGuiaTestLambda;
 
     // ========================================
     // Rutas del API Gateway - Exponer todos los módulos NestJS
@@ -805,19 +771,6 @@ export class WebportalStack extends cdk.Stack {
       description:
         "ARN of the Export Guias Webportal Lambda function (SQS Consumer)",
       exportName: generateExportName("lambda-export-guias-webportal-arn"),
-    });
-
-    // Lambda Outputs - Consume SOAP Test
-    new cdk.CfnOutput(this, "ConsumeSoapTestLambdaName", {
-      value: exportGuiaTestLambda.functionName,
-      description: "Name of the Consume SOAP Test Lambda function",
-      exportName: generateExportName("lambda-consume-soap-test-name"),
-    });
-
-    new cdk.CfnOutput(this, "ConsumeSoapTestLambdaArn", {
-      value: exportGuiaTestLambda.functionArn,
-      description: "ARN of the Consume SOAP Test Lambda function",
-      exportName: generateExportName("lambda-consume-soap-test-arn"),
     });
 
     // SQS Queue Outputs
