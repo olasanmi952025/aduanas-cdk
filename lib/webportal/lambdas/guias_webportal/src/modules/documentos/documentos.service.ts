@@ -29,6 +29,17 @@ export class DocumentsService {
       'fechaCreacion': 'FECHACREACION',
       'fechaEmision': 'FECHAEMISION',
       'numeroExterno': 'NUMEROEXTERNO',
+      'numeroAceptacion': 'NUMEROACEPTACION',
+      'estado': 'ESTADO',
+      'consignatario': 'CONSIGNATARIO',
+      'totalPeso': 'TOTALPESO',
+      'cantTotal': 'CANTTOTAL',
+      'motivoMarca': 'MOTIVOMARCA',
+      'falta': 'FALTA',
+      'sobra': 'SOBRA',
+      'nroDIPS': 'NRODIPS',
+      'fechaDIPS': 'FECHADIPS',
+      'tieneDIN': 'TIENEDIN',
       'id': 'ID',
     };
     return sortColumnMap[sort] || 'FECHACREACION';
@@ -601,12 +612,57 @@ export class DocumentsService {
     // Incluir CTE de fecha zarpe si existe
     const withClause = fechaZarpeCTE ? `WITH ${fechaZarpeCTE}` : 'WITH ';
     
+    // Determinar la columna de ordenamiento
+    // Con SELECT DISTINCT, Oracle requiere usar los alias del SELECT o expresiones completas
+    let orderByColumn: string;
+    if (sortColumn === 'ESTADO') {
+      // Usar el alias del SELECT
+      orderByColumn = 'estado';
+    } else if (sortColumn === 'CONSIGNATARIO') {
+      // Usar el alias del SELECT (nombreParticipante)
+      orderByColumn = 'nombreParticipante';
+    } else if (sortColumn === 'TOTALPESO') {
+      // Usar el alias del SELECT (totalPeso)
+      orderByColumn = 'totalPeso';
+    } else if (sortColumn === 'CANTTOTAL') {
+      // Usar el alias del SELECT (totalItem)
+      orderByColumn = 'totalItem';
+    } else if (sortColumn === 'MOTIVOMARCA') {
+      // Usar el alias del SELECT (motivoSeleccion)
+      orderByColumn = 'motivoSeleccion';
+    } else if (sortColumn === 'FALTA') {
+      // Usar el alias del SELECT (falta)
+      orderByColumn = 'falta';
+    } else if (sortColumn === 'SOBRA') {
+      // Usar el alias del SELECT (sobra)
+      orderByColumn = 'sobra';
+    } else if (sortColumn === 'NRODIPS') {
+      // Usar el alias del SELECT (numeroDips)
+      orderByColumn = 'numeroDips';
+    } else if (sortColumn === 'FECHADIPS') {
+      // Usar el alias del SELECT (fechaDips)
+      orderByColumn = 'fechaDips';
+    } else if (sortColumn === 'TIENEDIN') {
+      // Usar el alias del SELECT (esDin)
+      orderByColumn = 'esDin';
+    } else {
+      // Para campos de df, usar el alias del SELECT si existe, sino el nombre de la columna
+      const dfColumnMap: Record<string, string> = {
+        'FECHACREACION': 'fechaAceptacion',
+        'FECHAEMISION': 'fechaEmision',
+        'NUMEROEXTERNO': 'numeroExterno',
+        'NUMEROACEPTACION': 'numeroAceptacion',
+        'ID': 'id',
+      };
+      orderByColumn = dfColumnMap[sortColumn] || `df.${sortColumn}`;
+    }
+    
     return `${withClause}${documentosFiltradosCTE}${commonCTEs}${optionalCTEs}
         SELECT DISTINCT
           df.ID as id,
           df.NUMEROEXTERNO as numeroExterno,
-          df.NUMEROACEPTACION as numeroAceptacion,
           df.FECHAEMISION as fechaEmision,
+          df.NUMEROACEPTACION as numeroAceptacion,
           eo.NOMBRE as estado,
           ${needsManifiestos ? 'far.fechaArribo,' : 'NULL AS fechaArribo,'}
           df.FECHACREACION as fechaAceptacion,
@@ -623,7 +679,7 @@ export class DocumentsService {
           NVL(ed.esDin, 'No') AS esDin
         FROM documentos_filtrados df
         ${joins.join('\n        ')}
-        ORDER BY df.${sortColumn} ${order}`;
+        ORDER BY ${orderByColumn} ${order}`;
   }
 
   /**
@@ -784,7 +840,7 @@ export class DocumentsService {
       // Configurar filtro de estado si existe
       let hasStatusFilter = !!filters?.status;
       if (hasStatusFilter) {
-        params.estado = String(filters.status);
+        params.estado = String(filters.status).toUpperCase();
       }
 
       // Generar clave de cache basada en los filtros (sin paginación ni ordenamiento)
