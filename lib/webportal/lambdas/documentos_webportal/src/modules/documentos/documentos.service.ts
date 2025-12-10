@@ -292,8 +292,15 @@ export class DocumentsService {
       }
 
       if (filters?.estado && !tieneBusquedaEspecifica) {
-        where.push("eo.TIPOESTADO = :estado");
-        params.estado = String(filters.estado);
+        const estadoValue = String(filters.estado).toUpperCase().trim();
+        // Si el estado es VISADO o VIS, filtrar por REVISADO = 'SI' en lugar del filtro de estados normal
+        if (estadoValue === 'VISADO' || estadoValue === 'VIS') {
+          // Filtrar por documentos que tengan estado VIS activo (revisado = 'SI')
+          where.push("EXISTS (SELECT 1 FROM DOCUMENTOS.DOCESTADOS est WHERE est.tipodocumento = dd.tipodocumento AND est.documento = dd.id AND est.tipoestado = 'VIS' AND est.activa = 'S')");
+        } else {
+          where.push("eo.TIPOESTADO = :estado");
+          params.estado = estadoValue;
+        }
       }
 
       if (filters?.sentidoOperacion && !tieneBusquedaEspecifica) {
